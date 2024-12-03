@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { getAppUrl, validateServerEnv, normalizeUrl } from "~/utils/env";
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +22,10 @@ async function exchangeCodeForToken(code: string) {
     }),
   });
 
+  if (!response.ok) {
+    throw new Error(`Token exchange failed: ${response.statusText}`);
+  }
+
   return response.json();
 }
 
@@ -34,34 +37,41 @@ async function fetchUserData(token: string) {
     },
   });
 
+  if (!response.ok) {
+    throw new Error(`User data fetch failed: ${response.statusText}`);
+  }
+
   return response.json();
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const appUrl = getAppUrl();
   
   try {
-    const { searchParams } = new URL(request.url);
-    const code = searchParams.get("code");
-    const headersList = headers();
-    const referer = headersList.get("referer");
+    const code = request.nextUrl.searchParams.get("code");
     
     if (!code) {
-      return NextResponse.redirect(appUrl);
+      return NextResponse.redirect(new URL('/', appUrl), {
+        status: 302,
+      });
     }
 
     const tokenData = await exchangeCodeForToken(code);
     
     if (tokenData.error || !tokenData.access_token) {
       console.error("Token exchange error:", tokenData.error_description || "Failed to get access token");
-      return NextResponse.redirect(appUrl);
+      return NextResponse.redirect(new URL('/', appUrl), {
+        status: 302,
+      });
     }
 
     const userData = await fetchUserData(tokenData.access_token);
     
     if (!userData || !userData.login) {
       console.error("User data error:", "Failed to get user data");
-      return NextResponse.redirect(appUrl);
+      return NextResponse.redirect(new URL('/', appUrl), {
+        status: 302,
+      });
     }
 
     const redirectUrl = new URL("/github", appUrl);
@@ -78,9 +88,20 @@ export async function GET(request: Request) {
       redirectUrl.searchParams.set("expires_at", expiresAt.toString());
     }
 
-    return NextResponse.redirect(redirectUrl.toString());
+    const response = NextResponse.redirect(redirectUrl, {
+      status: 302,
+    });
+
+    // Set cache headers to prevent stale data
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
   } catch (error) {
     console.error("Auth callback error:", error);
-    return NextResponse.redirect(appUrl);
+    return NextResponse.redirect(new URL('/', appUrl), {
+      status: 302,
+    });
   }
 }

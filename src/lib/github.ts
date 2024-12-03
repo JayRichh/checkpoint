@@ -8,7 +8,9 @@ const GITHUB_API = "https://api.github.com/graphql";
 const MAX_REPOS_PER_PAGE = 50;
 const MAX_LANGUAGES_PER_REPO = 10;
 const EXCLUDED_LANGUAGES = new Set(["Roff"]);
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 2 * 60 * 1000; // Reduced to 2 minutes
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 interface ContributionDay {
   contributionCount: number;
@@ -67,6 +69,7 @@ type GitHubStateData = {
   isLoading: boolean;
   loadingYears: Set<number>;
   currentRequest: Promise<any> | null;
+  retryCount: number;
 };
 
 interface GitHubState extends GitHubStateData {
@@ -84,12 +87,12 @@ interface GitHubState extends GitHubStateData {
 
 type GitHubStorageState = Pick<GitHubStateData, 'yearData' | 'languageData' | 'lastFetched'>;
 
-// Custom storage with username-based keys
 const createPerUserStorage = () => {
+  const STORAGE_VERSION = '1.0';
   const storage = createJSONStorage<GitHubStorageState>(() => ({
     getItem: (name): string | null => {
       const username = getCurrentUsername();
-      const key = `${name}-${username || 'anonymous'}`;
+      const key = `${name}-${username || 'anonymous'}-v${STORAGE_VERSION}`;
       try {
         return localStorage.getItem(key);
       } catch {
@@ -98,7 +101,7 @@ const createPerUserStorage = () => {
     },
     setItem: (name, value): void => {
       const username = getCurrentUsername();
-      const key = `${name}-${username || 'anonymous'}`;
+      const key = `${name}-${username || 'anonymous'}-v${STORAGE_VERSION}`;
       try {
         localStorage.setItem(key, JSON.stringify(value));
       } catch {
@@ -107,7 +110,7 @@ const createPerUserStorage = () => {
     },
     removeItem: (name): void => {
       const username = getCurrentUsername();
-      const key = `${name}-${username || 'anonymous'}`;
+      const key = `${name}-${username || 'anonymous'}-v${STORAGE_VERSION}`;
       try {
         localStorage.removeItem(key);
       } catch {
@@ -118,30 +121,38 @@ const createPerUserStorage = () => {
   return storage;
 };
 
-async function makeGraphQLRequest(query: string, variables: any) {
-  const token = await getAuthToken();
-  if (!token) throw new Error("No auth token available");
+async function makeGraphQLRequest(query: string, variables: any, retryCount = 0): Promise<any> {
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error("No auth token available");
 
-  const response = await axios.post(
-    GITHUB_API,
-    { query, variables },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+    const response = await axios.post(
+      GITHUB_API,
+      { query, variables },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  if (response.data.errors) {
-    const message = response.data.errors[0]?.message;
-    if (message?.includes('rate limit')) {
-      throw new Error("API rate limit exceeded. Please try again later.");
+    if (response.data.errors) {
+      const message = response.data.errors[0]?.message;
+      if (message?.includes('rate limit')) {
+        throw new Error("API rate limit exceeded. Please try again later.");
+      }
+      throw new Error(message || "GraphQL Error");
     }
-    throw new Error(message || "GraphQL Error");
+
+    return response;
+  } catch (error) {
+    if (retryCount < MAX_RETRIES) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+      return makeGraphQLRequest(query, variables, retryCount + 1);
+    }
+    throw error;
   }
-
-  return response;
 }
 
 async function fetchAllData() {
@@ -297,6 +308,7 @@ export const useGitHubStore = create<GitHubState>()(
       languageData: null,
       lastFetched: null,
       currentRequest: null,
+      retryCount: 0,
       setProgress: (progress) =>
         set((state) => ({
           progress: Math.max(state.progress, progress),
@@ -327,13 +339,17 @@ export const useGitHubStore = create<GitHubState>()(
           languageData: null,
           lastFetched: null,
           currentRequest: null,
+          retryCount: 0,
         }),
       fetchGitHubContributions: async () => {
         const store = get();
         const { setProgress, setError, setYearData, setLanguageData, setLoading, updateLastFetched, currentRequest, setCurrentRequest } = store;
 
-        // Check if data is still fresh
-        if (store.lastFetched && Date.now() - store.lastFetched < CACHE_DURATION) {
+        // Force refresh if no data or stale
+        const forceRefresh = !store.lastFetched || Date.now() - store.lastFetched > CACHE_DURATION;
+
+        // Check if data is still fresh and valid
+        if (!forceRefresh && store.yearData.length > 0) {
           return store.yearData;
         }
 
@@ -385,6 +401,17 @@ export const useGitHubStore = create<GitHubState>()(
     }
   )
 );
+
+// Listen for auth events to handle cache invalidation
+if (typeof window !== 'undefined') {
+  window.addEventListener('auth-token-changed', () => {
+    useGitHubStore.getState().reset();
+  });
+
+  window.addEventListener('auth-logout', () => {
+    useGitHubStore.getState().reset();
+  });
+}
 
 // Subscribe to auth changes to clear data when needed
 useAuthStore.subscribe((state, prevState) => {

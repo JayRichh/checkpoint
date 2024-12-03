@@ -4,8 +4,7 @@ import { getAppUrl } from "~/utils/env";
 
 // Paths that require authentication
 const PROTECTED_PATHS = [
-  "/api/github",  // Protected API routes
-  "/github",      // Protected client routes
+  "/api/github",  
 ];
 
 // Paths that should skip token validation
@@ -14,6 +13,9 @@ const PUBLIC_PATHS = [
   "/api/auth/refresh",
   "/api/auth/device",
 ];
+
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 1000;
 
 export const config = {
   matcher: [
@@ -27,24 +29,45 @@ export const config = {
   ],
 };
 
+async function validateGitHubToken(token: string, retryCount = 0): Promise<Response> {
+  try {
+    const response = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Cache-Control": "no-cache",
+      },
+    });
+
+    if (!response.ok && retryCount < MAX_RETRIES) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+      return validateGitHubToken(token, retryCount + 1);
+    }
+
+    return response;
+  } catch (error) {
+    if (retryCount < MAX_RETRIES) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+      return validateGitHubToken(token, retryCount + 1);
+    }
+    throw error;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const response = NextResponse.next();
-
-  // Add cache control headers to prevent stale data
-  response.headers.set('Cache-Control', 'no-store, must-revalidate');
-  response.headers.set('Pragma', 'no-cache');
-  response.headers.set('Expires', '0');
 
   // Skip middleware for public paths
   if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "no-store, must-revalidate");
     return response;
   }
 
   // Check if path requires authentication
   const requiresAuth = PROTECTED_PATHS.some(path => pathname.startsWith(path));
   if (!requiresAuth) {
-    return response;
+    return NextResponse.next();
   }
 
   // Get auth token from header or query param
@@ -52,76 +75,86 @@ export async function middleware(request: NextRequest) {
   const token = authHeader?.replace("Bearer ", "") || request.nextUrl.searchParams.get("token");
 
   if (!token) {
-    // Redirect to home page if accessing protected client routes without auth
-    if (!pathname.startsWith('/api/')) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
     return NextResponse.json(
       { error: "Authentication required" },
-      { status: 401 }
+      { 
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store, must-revalidate",
+        }
+      }
     );
   }
 
   try {
     // Validate token with GitHub
-    const githubResponse = await fetch("https://api.github.com/user", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
+    const response = await validateGitHubToken(token);
 
-    if (!githubResponse.ok) {
-      // Clear invalid auth state and redirect for client routes
-      if (!pathname.startsWith('/api/')) {
-        const response = NextResponse.redirect(new URL('/', request.url));
-        response.headers.set('Clear-Site-Data', '"storage"');
-        return response;
+    if (!response.ok) {
+      // Check if token needs refresh
+      if (response.status === 401) {
+        return NextResponse.json(
+          { error: "Token expired", requiresRefresh: true },
+          { 
+            status: 401,
+            headers: {
+              "Cache-Control": "no-store, must-revalidate",
+            }
+          }
+        );
       }
+
       return NextResponse.json(
         { error: "Invalid token" },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            "Cache-Control": "no-store, must-revalidate",
+          }
+        }
       );
     }
 
     // Clone the request headers
     const requestHeaders = new Headers(request.headers);
     
-    // Add validated token and user info to headers
+    // Add validated token to header
     requestHeaders.set("x-github-token", token);
-    const userData = await githubResponse.json();
-    requestHeaders.set("x-github-user", userData.login);
 
     // Forward the request with the validated token
-    const response = NextResponse.next({
+    const response2 = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
 
-    // Add CORS headers if needed
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    response.headers.set(
+    // Add headers
+    response2.headers.set("Cache-Control", "no-store, must-revalidate");
+    response2.headers.set("Access-Control-Allow-Origin", "*");
+    response2.headers.set(
       "Access-Control-Allow-Methods",
       "GET, POST, PUT, DELETE, OPTIONS"
     );
-    response.headers.set(
+    response2.headers.set(
       "Access-Control-Allow-Headers",
-      "Content-Type, Authorization"
+      "Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, Authorization"
+    );
+    response2.headers.set(
+      "Access-Control-Expose-Headers",
+      "x-github-token"
     );
 
-    return response;
+    return response2;
   } catch (error) {
     console.error("Token validation error:", error);
-    // Clear invalid auth state and redirect for client routes
-    if (!pathname.startsWith('/api/')) {
-      const response = NextResponse.redirect(new URL('/', request.url));
-      response.headers.set('Clear-Site-Data', '"storage"');
-      return response;
-    }
     return NextResponse.json(
       { error: "Failed to validate token" },
-      { status: 401 }
+      { 
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store, must-revalidate",
+        }
+      }
     );
   }
 }

@@ -20,6 +20,9 @@ interface AuthState {
 const DEMO_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN;
 const DEMO_USERNAME = "jayrichh";
 
+// Token refresh buffer (10 minutes)
+const REFRESH_BUFFER = 10 * 60 * 1000;
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -29,8 +32,13 @@ export const useAuthStore = create<AuthState>()(
       isOAuth: false,
       username: null,
       isDemoProfile: false,
-      setToken: (token, refreshToken = null, expiresAt = null) => 
-        set({ token, refreshToken, expiresAt }),
+      setToken: (token, refreshToken = null, expiresAt = null) => {
+        set({ token, refreshToken, expiresAt });
+        // Trigger GitHub store reset on token change
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth-token-changed'));
+        }
+      },
       setUsername: (username) => set({ username }),
       setIsOAuth: (isOAuth) => set({ isOAuth }),
       setIsDemoProfile: (isDemoProfile) => set({ isDemoProfile }),
@@ -42,17 +50,31 @@ export const useAuthStore = create<AuthState>()(
         username: DEMO_USERNAME,
         isDemoProfile: true
       }),
-      logout: () => set({
-        token: null,
-        refreshToken: null,
-        expiresAt: null,
-        isOAuth: false,
-        username: null,
-        isDemoProfile: false
-      }),
+      logout: () => {
+        set({
+          token: null,
+          refreshToken: null,
+          expiresAt: null,
+          isOAuth: false,
+          username: null,
+          isDemoProfile: false
+        });
+        // Clear GitHub store on logout
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth-logout'));
+        }
+      },
     }),
     {
       name: "github-auth-storage",
+      partialize: (state) => ({
+        token: state.token,
+        refreshToken: state.refreshToken,
+        expiresAt: state.expiresAt,
+        isOAuth: state.isOAuth,
+        username: state.username,
+        isDemoProfile: state.isDemoProfile,
+      }),
     }
   )
 );
@@ -71,6 +93,9 @@ export async function initiateDeviceFlow(): Promise<DeviceCodeResponse> {
   const appUrl = getAppUrl();
   const response = await fetch(normalizeUrl(appUrl, 'api/auth/device'), {
     method: "POST",
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
   });
   
   if (!response.ok) {
@@ -82,7 +107,11 @@ export async function initiateDeviceFlow(): Promise<DeviceCodeResponse> {
 
 export async function pollDeviceCode(deviceCode: string): Promise<any> {
   const appUrl = getAppUrl();
-  const response = await fetch(normalizeUrl(appUrl, `api/auth/device?device_code=${deviceCode}`));
+  const response = await fetch(normalizeUrl(appUrl, `api/auth/device?device_code=${deviceCode}`), {
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
+  });
   
   if (!response.ok) {
     throw new Error("Failed to poll device code");
@@ -115,16 +144,27 @@ export function getGitHubOAuthURL(state?: string) {
   }
 }
 
+let refreshPromise: Promise<any> | null = null;
+
 export async function refreshAccessToken(refreshToken: string) {
   const appUrl = getAppUrl();
+  
+  // Ensure only one refresh request at a time
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
   try {
-    const response = await fetch(normalizeUrl(appUrl, 'api/auth/refresh'), {
+    refreshPromise = fetch(normalizeUrl(appUrl, 'api/auth/refresh'), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        'Cache-Control': 'no-cache',
       },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
+
+    const response = await refreshPromise;
 
     if (!response.ok) {
       throw new Error("Failed to refresh token");
@@ -135,6 +175,8 @@ export async function refreshAccessToken(refreshToken: string) {
   } catch (error) {
     console.error("Error refreshing token:", error);
     throw error;
+  } finally {
+    refreshPromise = null;
   }
 }
 
@@ -142,7 +184,8 @@ export function isTokenExpired(): boolean {
   const { expiresAt } = useAuthStore.getState();
   if (!expiresAt) return false;
   
-  return Date.now() > expiresAt - 5 * 60 * 1000;
+  // Check if token will expire within the buffer period
+  return Date.now() > expiresAt - REFRESH_BUFFER;
 }
 
 export async function ensureValidToken(): Promise<string | null> {
@@ -160,6 +203,8 @@ export async function ensureValidToken(): Promise<string | null> {
       return access_token;
     } catch (error) {
       console.error("Failed to refresh token:", error);
+      // Clear invalid tokens
+      setToken(null);
       return null;
     }
   }
