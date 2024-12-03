@@ -3,9 +3,16 @@
 import React from "react";
 import { Button } from "./ui/Button";
 
+interface FallbackProps {
+  error: Error;
+  resetErrorBoundary: () => void;
+}
+
+type FallbackComponent = React.ComponentType<FallbackProps>;
+
 interface Props {
   children: React.ReactNode;
-  fallback?: React.ReactNode;
+  fallback?: React.ReactNode | FallbackComponent;
 }
 
 interface State {
@@ -33,9 +40,19 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render() {
-    if (this.state.hasError) {
+    if (this.state.hasError && this.state.error) {
       if (this.props.fallback) {
-        return this.props.fallback;
+        if (React.isValidElement(this.props.fallback)) {
+          return this.props.fallback;
+        }
+        
+        const FallbackComponent = this.props.fallback as FallbackComponent;
+        return (
+          <FallbackComponent
+            error={this.state.error}
+            resetErrorBoundary={this.handleReset}
+          />
+        );
       }
 
       return (
@@ -43,7 +60,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
             <h2 className="mb-2 text-lg font-semibold">Something went wrong</h2>
             <p className="mb-4 text-sm text-muted-foreground">
-              {this.state.error?.message || "An unexpected error occurred"}
+              {this.state.error.message || "An unexpected error occurred"}
             </p>
             <Button onClick={this.handleReset} variant="secondary">
               Try again

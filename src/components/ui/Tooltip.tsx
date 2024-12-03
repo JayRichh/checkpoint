@@ -34,7 +34,7 @@ const Tooltip = ({ content, children, delayDuration = 0 }: TooltipProps) => (
   <TooltipRoot delayDuration={delayDuration}>
     <TooltipTrigger asChild>{children}</TooltipTrigger>
     <TooltipContent>
-      <p>{content}</p>
+      <span className="block">{content}</span>
     </TooltipContent>
   </TooltipRoot>
 );

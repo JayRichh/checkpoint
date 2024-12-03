@@ -1,9 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-
 import { CSSProperties } from "react";
-
 import { cn } from "~/utils/cn";
 
 export interface GradientBackgroundProps {
@@ -14,84 +12,78 @@ export interface GradientBackgroundProps {
 }
 
 interface CustomCSSProperties extends CSSProperties {
-  "--primary-color"?: string;
-  "--accent-color"?: string;
+  "--gradient-start"?: string;
+  "--gradient-end"?: string;
 }
 
-export const GradientBackground = ({
+const animationVariant = {
+  initial: { scale: 1, opacity: 0.1 },
+  animate: {
+    scale: [1, 1.05, 1],
+    opacity: [0.1, 0.15, 0.1],
+  },
+};
+
+interface GradientConfig {
+  style: string;
+  vars: {
+    start: string;
+    end?: string;
+  };
+}
+
+const gradientConfigs: Record<GradientBackgroundProps["variant"] & string, GradientConfig> = {
+  default: {
+    style: "bg-[radial-gradient(circle_at_center,var(--gradient-start)_0%,transparent_70%)]",
+    vars: { start: "hsl(var(--primary))" }
+  },
+  radial: {
+    style: "bg-[radial-gradient(circle_at_center,var(--gradient-start)_0%,var(--gradient-end)_25%,transparent_60%)]",
+    vars: { start: "hsl(var(--primary))", end: "hsl(var(--accent))" }
+  },
+  spotlight: {
+    style: "bg-[radial-gradient(circle_at_center,var(--gradient-start)_0%,transparent_80%)]",
+    vars: { start: "hsl(var(--primary))" }
+  },
+  mesh: {
+    style: "bg-[radial-gradient(circle_at_center,var(--gradient-start)_0%,var(--gradient-end)_50%,transparent_70%)]",
+    vars: { start: "hsl(var(--primary))", end: "hsl(var(--accent))" }
+  }
+};
+
+export function GradientBackground({
   variant = "default",
   interactive = false,
   className,
   children,
-}: GradientBackgroundProps) => {
-  const variants = {
-    default: {
-      initial: { scale: 1, opacity: 0.5 },
-      animate: {
-        scale: [1, 1.05, 1],
-        opacity: [0.5, 0.6, 0.5],
-      },
-    },
-    radial: {
-      initial: { scale: 1, opacity: 0.4 },
-      animate: {
-        scale: [1, 1.1, 1],
-        opacity: [0.4, 0.5, 0.4],
-      },
-    },
+}: GradientBackgroundProps) {
+  const config = gradientConfigs[variant];
+  const style: CustomCSSProperties = {
+    "--gradient-start": config.vars.start,
   };
+  
+  if (config.vars.end) {
+    style["--gradient-end"] = config.vars.end;
+  }
 
-  const gradientElements = {
-    default: (
+  return (
+    <div className={cn("relative w-full h-full", className)}>
       <motion.div
-        initial={variants.default.initial}
-        animate={interactive ? undefined : variants.default.animate}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          repeatType: "reverse",
-        }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle_at_center,var(--primary-color)_0%,transparent_70%)] opacity-[0.15] dark:opacity-[0.07] blur-[100px]"
-        style={
-          {
-            "--primary-color": "hsl(var(--primary))",
-          } as CustomCSSProperties
-        }
-      />
-    ),
-    radial: (
-      <motion.div
-        initial={variants.radial.initial}
-        animate={interactive ? undefined : variants.radial.animate}
+        initial={animationVariant.initial}
+        animate={interactive ? undefined : animationVariant.animate}
         transition={{
           duration: 20,
           repeat: Infinity,
           repeatType: "reverse",
         }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px]"
-      >
-        <div
-          className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--primary-color)_0%,var(--accent-color)_25%,transparent_60%)] opacity-[0.15] dark:opacity-[0.07] blur-[100px]"
-          style={
-            {
-              "--primary-color": "hsl(var(--primary))",
-              "--accent-color": "hsl(var(--accent))",
-            } as CustomCSSProperties
-          }
-        />
-      </motion.div>
-    ),
-    spotlight: null,
-    mesh: null,
-  };
-
-  return (
-    <div className={cn("relative w-full h-full overflow-hidden", className)}>
-      <div className="absolute inset-0 bg-background/20" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        {gradientElements[variant]}
-      </div>
-      {children && <div className="relative z-10">{children}</div>}
+        className={cn(
+          "absolute inset-0",
+          config.style,
+          "blur-[60px] dark:opacity-75"
+        )}
+        style={style}
+      />
+      {children}
     </div>
   );
-};
+}

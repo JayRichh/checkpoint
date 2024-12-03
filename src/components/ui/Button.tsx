@@ -2,66 +2,71 @@
 
 import { type VariantProps, cva } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
-
 import { forwardRef } from "react";
-
 import { cn } from "~/utils/cn";
 
 const buttonVariants = cva(
   [
     "inline-flex items-center justify-center whitespace-nowrap",
     "font-medium transition-all duration-200",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2",
     "disabled:pointer-events-none disabled:opacity-50",
+    "hover:-translate-y-0.5 active:translate-y-0",
   ],
   {
     variants: {
       variant: {
         default: [
-          "bg-background text-foreground",
+          "bg-background/50 text-foreground",
           "border border-border/50",
+          "backdrop-blur-sm backdrop-saturate-150",
           "shadow-sm hover:shadow-md",
-          "hover:bg-muted/80 hover:border-border",
-          "active:bg-muted active:shadow-sm",
+          "hover:bg-background/80 hover:border-border",
+          "active:bg-background/90 active:shadow-sm",
         ],
         primary: [
           "bg-primary text-primary-foreground font-semibold",
           "border border-primary/20",
           "shadow-lg shadow-primary/20",
           "hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30",
-          "active:bg-primary/80 active:shadow-md",
+          "active:bg-primary/95 active:shadow-md",
         ],
         secondary: [
           "bg-secondary text-secondary-foreground",
           "border border-secondary/30",
-          "shadow-sm",
-          "hover:bg-secondary/90 hover:border-secondary/40 hover:shadow-md",
-          "active:bg-secondary/80",
+          "shadow-lg shadow-secondary/20",
+          "hover:bg-secondary/90 hover:border-secondary/40 hover:shadow-xl hover:shadow-secondary/30",
+          "active:bg-secondary/95 active:shadow-md",
         ],
         outline: [
           "border-2 text-foreground",
           "border-primary/80",
-          "hover:bg-primary hover:text-primary-foreground hover:border-primary",
-          "active:bg-primary/90",
-          "shadow-sm hover:shadow-md",
+          "shadow-sm hover:shadow-md shadow-primary/10",
+          "hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-primary/20",
+          "active:bg-primary/95 active:shadow-sm",
         ],
-        ghost: ["text-foreground", "hover:bg-muted hover:text-foreground/90", "active:bg-muted/80"],
+        ghost: [
+          "text-foreground",
+          "hover:bg-foreground/10",
+          "active:bg-foreground/15",
+          "glass glass-hover",
+        ],
         link: [
           "text-primary underline-offset-4",
-          "hover:underline hover:bg-transparent",
-          "active:text-primary/90",
-          "h-auto p-0",
+          "hover:underline hover:bg-transparent hover:text-primary/90",
+          "active:text-primary/80",
+          "h-auto p-0 hover:translate-y-0",
         ],
         destructive: [
-          "bg-destructive/10 text-destructive font-semibold",
-          "border border-destructive/30",
-          "hover:bg-destructive hover:text-destructive-foreground",
-          "hover:border-destructive hover:shadow-md hover:shadow-destructive/20",
-          "active:bg-destructive/90",
+          "bg-error/10 text-error font-semibold",
+          "border border-error/30",
+          "shadow-sm shadow-error/10",
+          "hover:bg-error hover:text-error-foreground hover:shadow-md hover:shadow-error/20",
+          "hover:border-error active:bg-error/95 active:shadow-sm",
         ],
       },
       size: {
-        sm: "h-8 text-xs rounded-md px-3",
+        sm: "h-8 text-xs rounded-lg px-3",
         md: "h-10 text-sm rounded-lg px-4",
         lg: "h-12 text-base rounded-lg px-6",
         icon: "h-10 w-10 rounded-lg p-0",

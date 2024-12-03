@@ -25,6 +25,7 @@ export interface YearContributions {
   year: number;
   contributions: Array<{ day: string; value: number }>;
   totalContributions: number;
+  languageData: LanguageStats | null;
 }
 
 export interface LanguageStats {
@@ -62,8 +63,7 @@ interface Repository {
 
 type GitHubStateData = {
   yearData: YearContributions[];
-  languageData: LanguageStats | null;
-  lastFetched: number | null;
+  lastFetched: { [year: number]: number | null };
   progress: number;
   error: string | null;
   isLoading: boolean;
@@ -78,14 +78,13 @@ interface GitHubState extends GitHubStateData {
   setLoading: (loading: boolean) => void;
   setLoadingYear: (year: number, loading: boolean) => void;
   setYearData: (data: YearContributions[]) => void;
-  setLanguageData: (data: LanguageStats | null) => void;
-  setCurrentRequest: (request: Promise<any> | null) => void;
-  updateLastFetched: () => void;
+  addYearData: (data: YearContributions) => void;
+  updateLastFetched: (year: number) => void;
   reset: () => void;
-  fetchGitHubContributions: () => Promise<YearContributions[]>;
+  fetchGitHubContributions: (year?: number) => Promise<YearContributions[]>;
 }
 
-type GitHubStorageState = Pick<GitHubStateData, 'yearData' | 'languageData' | 'lastFetched'>;
+type GitHubStorageState = Pick<GitHubStateData, 'yearData' | 'lastFetched'>;
 
 const createPerUserStorage = () => {
   const STORAGE_VERSION = '1.0';
@@ -155,17 +154,15 @@ async function makeGraphQLRequest(query: string, variables: any, retryCount = 0)
   }
 }
 
-async function fetchAllData() {
+async function fetchYearData(year: number): Promise<YearContributions> {
   const { excludeForks } = useFilterStore.getState();
   const username = getCurrentUsername();
   if (!username) throw new Error("GitHub username not found");
 
-  const currentYear = new Date().getFullYear();
-
   const query = `
-    query ($username: String!, $from: DateTime!, $excludeForks: Boolean!) {
+    query ($username: String!, $from: DateTime!, $to: DateTime!, $excludeForks: Boolean!) {
       user(login: $username) {
-        contributionsCollection(from: $from) {
+        contributionsCollection(from: $from, to: $to) {
           contributionCalendar {
             totalContributions
             weeks {
@@ -207,7 +204,8 @@ async function fetchAllData() {
 
   const variables = {
     username,
-    from: `${currentYear}-01-01T00:00:00Z`,
+    from: `${year}-01-01T00:00:00Z`,
+    to: `${year}-12-31T23:59:59Z`,
     excludeForks: !excludeForks
   };
 
@@ -216,8 +214,8 @@ async function fetchAllData() {
 
   const calendar = data.contributionsCollection.contributionCalendar;
   const weeks: ContributionWeek[] = calendar.weeks;
-  const yearStart = new Date(currentYear, 0, 1);
-  const yearEnd = new Date(currentYear, 11, 31);
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31);
   const allDays = new Map();
 
   for (let d = new Date(yearStart); d <= yearEnd; d.setDate(d.getDate() + 1)) {
@@ -233,11 +231,6 @@ async function fetchAllData() {
   });
 
   const contributions = Array.from(allDays.values());
-  const yearContributions = {
-    year: currentYear,
-    contributions,
-    totalContributions: calendar.totalContributions,
-  };
 
   const languageMap = new Map<string, { size: number; color: string; lineCount: number; fileCount: number }>();
   let totalSize = 0;
@@ -287,7 +280,9 @@ async function fetchAllData() {
     .sort((a, b) => b.size - a.size);
 
   return {
-    yearData: [yearContributions],
+    year,
+    contributions,
+    totalContributions: calendar.totalContributions,
     languageData: {
       languages,
       totalSize,
@@ -305,8 +300,7 @@ export const useGitHubStore = create<GitHubState>()(
       isLoading: false,
       loadingYears: new Set(),
       yearData: [],
-      languageData: null,
-      lastFetched: null,
+      lastFetched: {},
       currentRequest: null,
       retryCount: 0,
       setProgress: (progress) =>
@@ -326,9 +320,15 @@ export const useGitHubStore = create<GitHubState>()(
           return { loadingYears: newLoadingYears };
         }),
       setYearData: (yearData) => set({ yearData }),
-      setLanguageData: (languageData) => set({ languageData }),
-      setCurrentRequest: (request) => set({ currentRequest: request }),
-      updateLastFetched: () => set({ lastFetched: Date.now() }),
+      addYearData: (yearData) => 
+        set((state) => ({
+          yearData: [...state.yearData.filter(d => d.year !== yearData.year), yearData]
+            .sort((a, b) => b.year - a.year)
+        })),
+      updateLastFetched: (year) => 
+        set((state) => ({
+          lastFetched: { ...state.lastFetched, [year]: Date.now() }
+        })),
       reset: () =>
         set({
           progress: 0,
@@ -336,57 +336,55 @@ export const useGitHubStore = create<GitHubState>()(
           isLoading: false,
           loadingYears: new Set(),
           yearData: [],
-          languageData: null,
-          lastFetched: null,
+          lastFetched: {},
           currentRequest: null,
           retryCount: 0,
         }),
-      fetchGitHubContributions: async () => {
+      fetchGitHubContributions: async (year?: number) => {
         const store = get();
-        const { setProgress, setError, setYearData, setLanguageData, setLoading, updateLastFetched, currentRequest, setCurrentRequest } = store;
+        const { setProgress, setError, addYearData, setLoading, setLoadingYear, updateLastFetched } = store;
 
-        // Force refresh if no data or stale
-        const forceRefresh = !store.lastFetched || Date.now() - store.lastFetched > CACHE_DURATION;
-
-        // Check if data is still fresh and valid
-        if (!forceRefresh && store.yearData.length > 0) {
+        const targetYear = year || new Date().getFullYear();
+        const lastFetchedTime = store.lastFetched[targetYear];
+        
+        // Prevent concurrent fetches for the same year
+        if (store.loadingYears.has(targetYear)) {
           return store.yearData;
         }
-
-        // Clear any existing request if the username changes
-        const username = getCurrentUsername();
-        if (!username) {
-          store.reset();
-          throw new Error("No username available");
-        }
-
-        if (currentRequest) {
-          return currentRequest;
+        
+        // Check if data is still fresh and valid
+        const forceRefresh = !lastFetchedTime || Date.now() - lastFetchedTime > CACHE_DURATION;
+        const existingData = store.yearData.find(d => d.year === targetYear);
+        
+        if (!forceRefresh && existingData) {
+          return store.yearData;
         }
 
         try {
           setLoading(true);
-          store.reset();
+          setLoadingYear(targetYear, true);
           setProgress(10);
 
-          const request = fetchAllData();
-          setCurrentRequest(request);
-
-          const { yearData, languageData } = await request;
+          const yearData = await fetchYearData(targetYear);
           
-          setYearData(yearData);
-          setLanguageData(languageData);
-          updateLastFetched();
-          setProgress(100);
+          // Check if component is still mounted by verifying store state
+          if (get().loadingYears.has(targetYear)) {
+            addYearData(yearData);
+            updateLastFetched(targetYear);
+            setProgress(100);
+          }
 
-          return yearData;
+          return get().yearData;
         } catch (error) {
           const message = error instanceof Error ? error.message : "Error fetching GitHub data";
           setError(message);
-          return [];
+          return store.yearData;
         } finally {
-          setLoading(false);
-          setCurrentRequest(null);
+          // Only cleanup if the year is still in loading state
+          if (get().loadingYears.has(targetYear)) {
+            setLoading(false);
+            setLoadingYear(targetYear, false);
+          }
         }
       }
     }),
@@ -395,7 +393,6 @@ export const useGitHubStore = create<GitHubState>()(
       storage: createPerUserStorage(),
       partialize: (state): GitHubStorageState => ({
         yearData: state.yearData,
-        languageData: state.languageData,
         lastFetched: state.lastFetched,
       }),
     }

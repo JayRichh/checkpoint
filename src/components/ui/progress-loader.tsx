@@ -2,8 +2,9 @@
 
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import { cn } from "../../utils/cn";
-import { useGitHubStore } from "../../lib/github";
+import { cn } from "~/utils/cn";
+import { useGitHubStore } from "~/lib/github";
+import { Text } from "./Text";
 
 interface ProgressLoaderProps {
   onComplete?: () => void;
@@ -11,6 +12,25 @@ interface ProgressLoaderProps {
   isDataReady?: boolean;
   compact?: boolean;
 }
+
+type LoadingMessage = {
+  threshold: number;
+  message: string;
+};
+
+const loadingMessages: LoadingMessage[] = [
+  { threshold: 10, message: "Initializing connection..." },
+  { threshold: 20, message: "Connecting to GitHub API..." },
+  { threshold: 30, message: "Fetching recent contributions..." },
+  { threshold: 40, message: "Processing contribution data..." },
+  { threshold: 50, message: "Analyzing contribution patterns..." },
+  { threshold: 60, message: "Organizing contribution history..." },
+  { threshold: 70, message: "Fetching repository data..." },
+  { threshold: 80, message: "Processing language statistics..." },
+  { threshold: 90, message: "Analyzing code distribution..." },
+  { threshold: 95, message: "Finalizing data processing..." },
+  { threshold: 100, message: "Preparing visualization..." },
+] as const;
 
 export function ProgressLoader({
   onComplete,
@@ -29,26 +49,26 @@ export function ProgressLoader({
 
   const getLoadingMessage = () => {
     if (error) return "Error loading data";
-    if (progress < 10) return "Initializing connection...";
-    if (progress < 20) return "Connecting to GitHub API...";
-    if (progress < 30) return "Fetching recent contributions...";
-    if (progress < 40) return "Processing contribution data...";
-    if (progress < 50) return "Analyzing contribution patterns...";
-    if (progress < 60) return "Organizing contribution history...";
-    if (progress < 70) return "Fetching repository data...";
-    if (progress < 80) return "Processing language statistics...";
-    if (progress < 90) return "Analyzing code distribution...";
-    if (progress < 95) return "Finalizing data processing...";
-    if (progress < 100) return "Preparing visualization...";
-    return "Complete";
+    if (progress === 100) return "Complete";
+    
+    const currentMessage = loadingMessages.find(msg => progress < msg.threshold);
+    return currentMessage?.message || "Complete";
   };
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2">
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <span className="text-xs text-muted-foreground">Loading...</span>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center gap-2"
+        role="status"
+        aria-label="Loading"
+      >
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary/80 border-t-transparent" />
+        <Text variant="body-sm" className="text-foreground/60">
+          Loading...
+        </Text>
+      </motion.div>
     );
   }
 
@@ -56,39 +76,51 @@ export function ProgressLoader({
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-4",
-        className,
+        className
       )}
+      role="status"
+      aria-label={`Loading ${Math.round(progress)}%`}
     >
-      <div className="relative h-2 w-64 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+      <div className="relative h-2 w-64 overflow-hidden rounded-full bg-background/50">
         <motion.div
           className={cn(
             "absolute inset-y-0 left-0",
-            error ? "bg-destructive" : "bg-primary",
+            error ? "bg-destructive/90" : "bg-primary/90"
           )}
           initial={{ width: "0%" }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
+          transition={{ 
+            duration: 0.3, 
+            ease: [0.16, 1, 0.3, 1]
+          }}
         />
       </div>
       <motion.div
-        className={cn(
-          "text-sm",
-          error ? "text-destructive" : "text-muted-foreground",
-        )}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {getLoadingMessage()} {!error && `(${Math.round(progress)}%)`}
+        <Text 
+          variant="body-sm"
+          className={cn(
+            error ? "text-destructive" : "text-foreground/60"
+          )}
+        >
+          {getLoadingMessage()} {!error && `(${Math.round(progress)}%)`}
+        </Text>
       </motion.div>
       {error && (
         <motion.div
-          className="text-xs text-destructive mt-1"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: 0.1 }}
         >
-          {error}
+          <Text 
+            variant="body-sm"
+            className="text-destructive/90"
+          >
+            {error}
+          </Text>
         </motion.div>
       )}
     </div>

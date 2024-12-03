@@ -4,81 +4,81 @@
 
 @layer base {
   :root {
-    /* Base colors with refined neutrals - Enhanced contrast */
-    --background: 35 30% 98%; /* Warm white */
-    --background-secondary: 35 25% 92%; /* Darker soft warm gray for better contrast */
-    --foreground: 35 25% 10%; /* Even darker warm gray for maximum contrast */
-    --foreground-secondary: 35 15% 25%; /* Darker medium warm gray */
-    --border: 35 20% 75%; /* Higher contrast border */
-    --border-secondary: 35 20% 70%; /* Higher contrast secondary border */
+    /* Base colors - Higher contrast, modern feel */
+    --background: 220 30% 98%;
+    --background-secondary: 220 25% 95%;
+    --foreground: 220 45% 12%;
+    --foreground-secondary: 220 35% 30%;
+    
+    /* Crisp borders */
+    --border: 220 20% 88%;
+    --border-secondary: 220 20% 82%;
 
-    /* Brand colors - warm terra with increased contrast */
-    --brand: 28 60% 45%;
+    /* Modern primary blue */
+    --primary: 224 80% 50%;
+    --primary-foreground: 220 30% 98%;
 
-    /* Primary colors - high contrast warm brown */
-    --primary: 28 75% 35%;
-    --primary-foreground: 35 30% 98%;
+    /* Vibrant accent */
+    --accent: 280 85% 55%;
+    --accent-foreground: 220 30% 98%;
 
-    /* Accent colors - high contrast soft purple */
-    --accent: 250 65% 45%;
-    --accent-foreground: 35 30% 98%;
+    /* Rich secondary */
+    --secondary: 220 35% 40%;
+    --secondary-foreground: 220 30% 98%;
 
-    /* Secondary colors - high contrast muted terra */
-    --secondary: 28 55% 40%;
-    --secondary-foreground: 35 30% 98%;
+    /* High contrast semantic colors */
+    --success: 142 70% 45%;
+    --success-foreground: 220 30% 98%;
+    
+    --warning: 38 95% 50%;
+    --warning-foreground: 220 45% 12%;
+    
+    --error: 0 85% 50%;
+    --error-foreground: 220 30% 98%;
 
-    /* Success colors - high contrast muted sage */
-    --success: 145 55% 35%;
-    --success-foreground: 35 30% 98%;
+    /* Surface with depth */
+    --surface: 220 30% 98%;
+    --surface-foreground: 220 45% 12%;
 
-    /* Warning colors - high contrast warm amber */
-    --warning: 35 90% 45%;
-    --warning-foreground: 35 25% 10%;
-
-    /* Error colors - high contrast muted coral */
-    --error: 0 75% 40%;
-    --error-foreground: 35 30% 98%;
-
-    /* Surface colors with increased contrast */
-    --surface: 35 30% 98%;
-    --surface-foreground: 35 25% 10%;
-
-    /* Border radius */
-    --radius: 0.75rem;
+    --radius: 1rem;
   }
 
   .dark {
-    /* Dark mode with enhanced contrast */
-    --background: 28 25% 8%;
-    --background-secondary: 28 25% 12%;
-    --foreground: 35 15% 98%;
-    --foreground-secondary: 35 15% 90%;
-    --border: 28 20% 30%;
-    --border-secondary: 28 20% 35%;
+    /* Dark mode - Rich deep colors */
+    --background: 220 30% 8%;
+    --background-secondary: 220 30% 11%;
+    --foreground: 220 20% 98%;
+    --foreground-secondary: 220 20% 80%;
+    
+    /* Subtle dark borders */
+    --border: 220 30% 18%;
+    --border-secondary: 220 30% 22%;
 
-    --brand: 28 60% 70%;
+    /* Bright primary */
+    --primary: 224 80% 65%;
+    --primary-foreground: 220 30% 8%;
 
-    /* Dark mode colors with enhanced contrast */
-    --primary: 28 65% 75%;
-    --primary-foreground: 28 25% 8%;
+    /* Vivid accent */
+    --accent: 280 85% 70%;
+    --accent-foreground: 220 30% 8%;
 
-    --accent: 250 55% 75%;
-    --accent-foreground: 28 25% 8%;
+    /* Bright secondary */
+    --secondary: 220 35% 70%;
+    --secondary-foreground: 220 30% 8%;
 
-    --secondary: 28 55% 70%;
-    --secondary-foreground: 28 25% 8%;
+    /* Bright semantic colors */
+    --success: 142 70% 60%;
+    --success-foreground: 220 30% 8%;
+    
+    --warning: 38 95% 65%;
+    --warning-foreground: 220 30% 8%;
+    
+    --error: 0 85% 65%;
+    --error-foreground: 220 30% 8%;
 
-    --success: 145 55% 60%;
-    --success-foreground: 28 25% 8%;
-
-    --warning: 35 90% 70%;
-    --warning-foreground: 28 25% 8%;
-
-    --error: 0 65% 70%;
-    --error-foreground: 28 25% 8%;
-
-    --surface: 28 25% 8%;
-    --surface-foreground: 35 15% 98%;
+    /* Deep surface */
+    --surface: 220 30% 8%;
+    --surface-foreground: 220 20% 98%;
   }
 }
 
@@ -88,28 +88,96 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings:
-      "rlig" 1,
-      "calt" 1;
+    @apply bg-background text-foreground antialiased min-h-screen;
+    font-feature-settings: "kern", "calt";
+  }
+
+  /* Modern Typography System */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans tracking-tight font-bold;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  p {
+    @apply text-base md:text-lg leading-relaxed text-foreground-secondary;
+    letter-spacing: -0.01em;
+  }
+
+  code {
+    @apply font-mono text-sm bg-background-secondary px-1.5 py-0.5 rounded-md;
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-primary/70 ring-offset-2;
+    @apply outline-none ring-2 ring-primary/60 ring-offset-2 ring-offset-background;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/95 
+           disabled:opacity-50 transition-all duration-200 rounded-lg px-4 py-2 
+           shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 
+           hover:-translate-y-0.5 active:translate-y-0;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90;
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 active:bg-secondary/95 
+           disabled:opacity-50 transition-all duration-200 rounded-lg px-4 py-2
+           shadow-lg shadow-secondary/20 hover:shadow-xl hover:shadow-secondary/30
+           hover:-translate-y-0.5 active:translate-y-0;
   }
 
   .btn-ghost {
-    @apply text-foreground hover:bg-background-secondary/80;
+    @apply text-foreground hover:bg-foreground/10 active:bg-foreground/15 
+           disabled:opacity-50 transition-all duration-200 rounded-lg px-4 py-2
+           hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /* Modern Card */
+  .card {
+    @apply rounded-xl border border-border bg-background/50 p-6 
+           shadow-lg backdrop-blur-xl transition-all duration-300
+           hover:shadow-xl hover:-translate-y-1 hover:bg-background/80;
+  }
+
+  .card-glass {
+    @apply bg-background/30 backdrop-blur-xl backdrop-saturate-150
+           border-border/50 shadow-lg shadow-background/5;
+  }
+
+  /* Navigation with animations */
+  .nav-link {
+    @apply relative text-foreground/70 transition-all duration-200 
+           hover:text-foreground px-3 py-2 rounded-lg
+           hover:bg-foreground/5;
+  }
+
+  .nav-link.active {
+    @apply text-foreground bg-foreground/5;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-accent to-primary/90 
+           bg-clip-text text-transparent animate-gradient-slow
+           bg-[length:200%_auto];
   }
 }
 
@@ -121,4 +189,62 @@
   .text-pretty {
     text-wrap: pretty;
   }
+
+  /* Enhanced Glass Effect */
+  .glass {
+    @apply bg-background/30 backdrop-blur-xl backdrop-saturate-150
+           border border-border/50 shadow-lg shadow-background/5;
+  }
+
+  /* Smooth Transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Modern Scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-background-secondary rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-primary/40 hover:bg-primary/50 
+           transition-colors duration-200;
+  }
+}
+
+@keyframes fade-in {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }

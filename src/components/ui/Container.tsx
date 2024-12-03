@@ -1,8 +1,8 @@
 "use client";
 
 import { HTMLMotionProps, motion } from "framer-motion";
-
 import { ReactNode, forwardRef } from "react";
+import { cn } from "~/utils/cn";
 
 interface ContainerProps extends Omit<HTMLMotionProps<"div">, "children"> {
   children?: ReactNode;
@@ -12,9 +12,6 @@ interface ContainerProps extends Omit<HTMLMotionProps<"div">, "children"> {
   glassDark?: boolean;
   noPadding?: boolean;
   className?: string;
-  innerClassName?: string;
-  maxWidth?: boolean;
-  gutter?: boolean;
 }
 
 const containerSizes = {
@@ -22,9 +19,9 @@ const containerSizes = {
   md: "max-w-4xl",
   lg: "max-w-6xl",
   xl: "max-w-7xl",
-  ultra: "max-w-ultra",
-  full: "max-w-full",
-};
+  ultra: "max-w-[1920px]",
+  full: "w-full",
+} as const;
 
 export const Container = forwardRef<HTMLDivElement, ContainerProps>(
   (
@@ -34,74 +31,49 @@ export const Container = forwardRef<HTMLDivElement, ContainerProps>(
       glass = false,
       glassDark = false,
       noPadding = false,
-      className = "",
-      innerClassName = "",
-      maxWidth = true,
-      gutter = true,
+      className,
       children,
       ...props
     },
     ref
   ) => {
-    // Animation variants for container
-    const containerVariants = {
-      hidden: { opacity: 0, y: 20 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-          duration: 0.5,
-          ease: "easeOut",
-        },
-      },
-    };
+    const baseStyles = cn(
+      "relative w-full",
+      containerSizes[size],
+      centered && "mx-auto",
+      !noPadding && "px-4 md:px-6",
+      className
+    );
 
-    // Base container styles
-    const containerStyles = `
-      relative
-      w-full
-      ${maxWidth ? containerSizes[size] : ""}
-      ${gutter ? "px-4 sm:px-6 lg:px-8" : ""}
-      ${centered ? "mx-auto" : ""}
-      ${className}
-    `;
-
-    // Glass effect styles
-    const glassStyles = `
-      ${glass ? "glass" : ""}
-      ${glassDark ? "dark:glass-dark" : ""}
-      ${!noPadding ? "p-6 sm:p-8" : ""}
-    `;
+    if (!glass && !glassDark) {
+      return (
+        <motion.div
+          ref={ref}
+          className={baseStyles}
+          {...props}
+        >
+          {children}
+        </motion.div>
+      );
+    }
 
     return (
       <motion.div
         ref={ref}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className={containerStyles}
+        className={baseStyles}
         {...props}
       >
-        {/* Optional glass effect wrapper */}
-        {glass || glassDark ? (
-          <div
-            className={`
-            rounded-xl
-            backdrop-blur-sm
-            ${glassStyles}
-            ${innerClassName}
-          `}
-          >
-            {/* Dynamic background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-white/0 dark:from-black/5 dark:to-black/0 rounded-xl" />
-
-            {/* Content with relative positioning */}
-            <div className="relative z-10">{children}</div>
-          </div>
-        ) : (
-          // Regular content without glass effect
-          <div className={innerClassName}>{children}</div>
-        )}
+        <div className={cn(
+          "rounded-xl md:rounded-2xl transition-all duration-200",
+          "bg-background/80 dark:bg-background/60",
+          "border border-border/40",
+          "shadow-lg shadow-background/5",
+          !noPadding && "p-4 md:p-6",
+          glass && "backdrop-blur-md",
+          glassDark && "dark:backdrop-blur-md"
+        )}>
+          {children}
+        </div>
       </motion.div>
     );
   }

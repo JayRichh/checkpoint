@@ -1,5 +1,11 @@
+"use client";
+
 import React from 'react';
 import { create } from 'zustand';
+import { motion } from 'framer-motion';
+import { Text } from '~/components/ui/Text';
+import { cn } from '~/utils/cn';
+import { fadeInUp } from '~/utils/motion';
 
 interface FilterState {
   excludeForks: boolean;
@@ -24,16 +30,51 @@ export function FilterControls({ onFilterChange }: FilterControlsProps) {
   };
 
   return (
-    <div className="mb-6 flex items-center justify-center gap-4">
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={excludeForks}
-          onChange={handleFilterChange}
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-        />
-        Exclude forks
+    <motion.div 
+      variants={fadeInUp}
+      initial="hidden"
+      animate="visible"
+      className="mb-8 flex items-center justify-center"
+    >
+      <label className="group flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-background/50 transition-colors cursor-pointer">
+        <div className="relative flex items-center">
+          <input
+            type="checkbox"
+            checked={excludeForks}
+            onChange={handleFilterChange}
+            className={cn(
+              "peer h-4 w-4 appearance-none rounded",
+              "border border-border/60",
+              "bg-background/50",
+              "checked:bg-primary checked:border-primary",
+              "focus:outline-none focus:ring-2 focus:ring-primary/30",
+              "transition-all duration-200"
+            )}
+            aria-label="Exclude forked repositories"
+          />
+          <motion.svg
+            className="absolute left-0 top-0 h-4 w-4 stroke-white stroke-[3]"
+            viewBox="0 0 16 16"
+            initial={false}
+            animate={excludeForks ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <motion.path
+              fill="none"
+              d="M3.5 8L6.5 11L12.5 5"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: excludeForks ? 1 : 0 }}
+              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+            />
+          </motion.svg>
+        </div>
+        <Text 
+          variant="body-sm" 
+          className="text-foreground/70 group-hover:text-foreground transition-colors"
+        >
+          Exclude forks
+        </Text>
       </label>
-    </div>
+    </motion.div>
   );
 }
