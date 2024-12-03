@@ -1,4 +1,4 @@
-# Committed
+# Checkpoint
 
 A GitHub analytics dashboard that visualizes your coding activity and repository statistics. Built with Next.js 15, TypeScript, and Tailwind CSS on the GitHub GraphQL API.
 
@@ -15,15 +15,15 @@ A GitHub analytics dashboard that visualizes your coding activity and repository
 
 1. Clone and install:
 ```bash
-git clone https://github.com/jayrichh/committed.git
-cd committed
+git clone https://github.com/jayrichh/checkpoint.git
+cd checkpoint
 npm install
 ```
 
 2. Set up GitHub OAuth:
 - Create OAuth App in GitHub Developer Settings
-- Set Homepage URL to `https://committed.vercel.app` (or your domain)
-- Set Authorization callback URL to `https://committed.vercel.app/api/auth/callback`
+- Set Homepage URL to `https://checkpoint.vercel.app` (or your domain)
+- Set Authorization callback URL to `https://checkpoint.vercel.app/api/auth/callback`
 - Enable Device Flow if needed
 - Create `.env.local` from `.env.example`
 - Add OAuth credentials and demo token

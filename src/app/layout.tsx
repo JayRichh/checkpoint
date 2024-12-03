@@ -7,13 +7,13 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Committed - GitHub Analytics",
+  title: "Checkpoint - GitHub Analytics",
   description: "Track your GitHub commitment and analyze your code contributions.",
   openGraph: {
-    title: "Committed - GitHub Analytics",
+    title: "Checkpoint - GitHub Analytics",
     description: "Track your GitHub commitment and analyze your code contributions.",
     url: process.env.NEXT_PUBLIC_APP_URL,
-    siteName: "Committed",
+    siteName: "Checkpoint",
     images: [
       {
         url: `${process.env.NEXT_PUBLIC_APP_URL}/og.png`,
@@ -26,7 +26,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Committed - GitHub Analytics",
+    title: "Checkpoint - GitHub Analytics",
     description: "Track your GitHub commitment and analyze your code contributions.",
     images: [`${process.env.NEXT_PUBLIC_APP_URL}/og.png`],
   },

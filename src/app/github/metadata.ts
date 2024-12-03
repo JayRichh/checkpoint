@@ -2,10 +2,10 @@ import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "GitHub Analytics - Committed",
+    title: "GitHub Analytics - Checkpoint",
     description: "View your GitHub contribution analytics and repository statistics.",
     openGraph: {
-      title: "GitHub Analytics - Committed",
+      title: "GitHub Analytics - Checkpoint",
       description: "View your GitHub contribution analytics and repository statistics.",
       images: [
         {
@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "GitHub Analytics - Committed",
+      title: "GitHub Analytics - Checkpoint",
       description: "View your GitHub contribution analytics and repository statistics.",
       images: [`${process.env.NEXT_PUBLIC_APP_URL}/og-github.png`],
     },

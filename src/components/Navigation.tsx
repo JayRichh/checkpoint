@@ -47,7 +47,7 @@ export function Navigation() {
               href="/"
               className="flex items-center space-x-2 font-bold"
             >
-              <span>Committed</span>
+              <span>Checkpoint</span>
             </Link>
             <nav className="hidden md:flex gap-6">
               <Link
