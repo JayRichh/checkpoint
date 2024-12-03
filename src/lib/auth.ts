@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { getAppUrl, validateGitHubConfig, normalizeUrl } from "~/utils/env";
+import { getAppUrl, validateClientEnv, normalizeUrl } from "~/utils/env";
 
 interface AuthState {
   token: string | null;
@@ -93,7 +93,11 @@ export async function pollDeviceCode(deviceCode: string): Promise<any> {
 
 export function getGitHubOAuthURL(state?: string) {
   try {
-    const { clientId } = validateGitHubConfig();
+    const clientId = validateClientEnv();
+    if (!clientId) {
+      throw new Error('GitHub Client ID is not configured');
+    }
+
     const appUrl = getAppUrl();
     const redirectUri = normalizeUrl(appUrl, 'api/auth/callback');
     

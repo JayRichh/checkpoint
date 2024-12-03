@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { getAppUrl, validateGitHubConfig, normalizeUrl } from "~/utils/env";
+import { getAppUrl, validateServerEnv, normalizeUrl } from "~/utils/env";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
 
 async function exchangeCodeForToken(code: string) {
   const appUrl = getAppUrl();
-  const { clientId, clientSecret } = validateGitHubConfig();
+  const { clientId, clientSecret } = validateServerEnv();
 
   const response = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",

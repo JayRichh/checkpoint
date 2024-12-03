@@ -14,25 +14,16 @@ export function getAppUrl() {
   return url;
 }
 
-export function validateEnvVars() {
-  const requiredVars = [
-    'NEXT_PUBLIC_GITHUB_CLIENT_ID',
-    'GITHUB_CLIENT_SECRET',
-  ];
-
-  const missingVars = requiredVars.filter(
-    (varName) => !process.env[varName]
-  );
-
-  if (missingVars.length > 0) {
-    console.error(
-      `Missing required environment variables: ${missingVars.join(', ')}`
-    );
-    throw new Error('Missing required environment variables');
+export function validateClientEnv() {
+  const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+  if (!clientId) {
+    console.error('NEXT_PUBLIC_GITHUB_CLIENT_ID is not configured');
+    return null;
   }
+  return clientId;
 }
 
-export function validateGitHubConfig() {
+export function validateServerEnv() {
   const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
