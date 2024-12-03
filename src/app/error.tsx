@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "~/components/ui/Button";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+import { getAppUrl } from "~/utils/env";
 
 export default function Error({
   error,
@@ -32,7 +31,7 @@ export default function Error({
           <Button onClick={() => reset()} variant="secondary">
             Try again
           </Button>
-          <Button onClick={() => window.location.href = `${APP_URL}/`} variant="outline">
+          <Button onClick={() => window.location.href = `${getAppUrl()}/`} variant="outline">
             Go home
           </Button>
         </div>

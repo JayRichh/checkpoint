@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { getAppUrl } from "~/utils/env";
 
 interface AuthState {
   token: string | null;
@@ -18,7 +19,6 @@ interface AuthState {
 
 const DEMO_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN;
 const DEMO_USERNAME = "jayrichh";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -69,7 +69,8 @@ interface DeviceCodeResponse {
 }
 
 export async function initiateDeviceFlow(): Promise<DeviceCodeResponse> {
-  const response = await fetch(`${APP_URL}/api/auth/device`, {
+  const appUrl = getAppUrl();
+  const response = await fetch(`${appUrl}/api/auth/device`, {
     method: "POST",
   });
   
@@ -81,7 +82,8 @@ export async function initiateDeviceFlow(): Promise<DeviceCodeResponse> {
 }
 
 export async function pollDeviceCode(deviceCode: string): Promise<any> {
-  const response = await fetch(`${APP_URL}/api/auth/device?device_code=${deviceCode}`);
+  const appUrl = getAppUrl();
+  const response = await fetch(`${appUrl}/api/auth/device?device_code=${deviceCode}`);
   
   if (!response.ok) {
     throw new Error("Failed to poll device code");
@@ -91,9 +93,10 @@ export async function pollDeviceCode(deviceCode: string): Promise<any> {
 }
 
 export function getGitHubOAuthURL(state?: string) {
+  const appUrl = getAppUrl();
   const params = new URLSearchParams({
     client_id: GITHUB_CLIENT_ID || "",
-    redirect_uri: `${APP_URL}/api/auth/callback`,
+    redirect_uri: `${appUrl}/api/auth/callback`,
     scope: "repo read:user",
     state: state || Math.random().toString(36).substring(7),
   });
@@ -102,8 +105,9 @@ export function getGitHubOAuthURL(state?: string) {
 }
 
 export async function refreshAccessToken(refreshToken: string) {
+  const appUrl = getAppUrl();
   try {
-    const response = await fetch(`${APP_URL}/api/auth/refresh`, {
+    const response = await fetch(`${appUrl}/api/auth/refresh`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

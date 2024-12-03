@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "../../components/ui/Button";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+import { getAppUrl } from "~/utils/env";
 
 export default function GitHubError({
   error,
@@ -34,7 +33,7 @@ export default function GitHubError({
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.location.href = `${APP_URL}/`}
+            onClick={() => window.location.href = `${getAppUrl()}/`}
           >
             Go home
           </Button>

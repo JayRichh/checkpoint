@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+import { getAppUrl } from "~/utils/env";
 
 // Paths that require authentication
 const PROTECTED_PATHS = [

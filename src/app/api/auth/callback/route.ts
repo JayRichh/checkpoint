@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+import { getAppUrl } from "~/utils/env";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
 
 async function exchangeCodeForToken(code: string) {
+  const appUrl = getAppUrl();
   const response = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: {
@@ -17,7 +17,7 @@ async function exchangeCodeForToken(code: string) {
       client_id: process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID,
       client_secret: process.env.GITHUB_CLIENT_SECRET,
       code,
-      redirect_uri: `${APP_URL}/api/auth/callback`,
+      redirect_uri: `${appUrl}/api/auth/callback`,
     }),
   });
 
@@ -37,30 +37,31 @@ async function fetchUserData(token: string) {
 
 export async function GET(request: Request) {
   try {
+    const appUrl = getAppUrl();
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const headersList = headers();
     const referer = headersList.get("referer");
     
     if (!code) {
-      return NextResponse.redirect(`${APP_URL}/`);
+      return NextResponse.redirect(`${appUrl}/`);
     }
 
     const tokenData = await exchangeCodeForToken(code);
     
     if (tokenData.error || !tokenData.access_token) {
       console.error("Token exchange error:", tokenData.error_description || "Failed to get access token");
-      return NextResponse.redirect(`${APP_URL}/`);
+      return NextResponse.redirect(`${appUrl}/`);
     }
 
     const userData = await fetchUserData(tokenData.access_token);
     
     if (!userData || !userData.login) {
       console.error("User data error:", "Failed to get user data");
-      return NextResponse.redirect(`${APP_URL}/`);
+      return NextResponse.redirect(`${appUrl}/`);
     }
 
-    const redirectUrl = new URL("/github", APP_URL);
+    const redirectUrl = new URL("/github", appUrl);
     redirectUrl.searchParams.set("token", tokenData.access_token);
     redirectUrl.searchParams.set("username", userData.login);
     redirectUrl.searchParams.set("oauth", "true");
@@ -77,6 +78,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(redirectUrl.toString());
   } catch (error) {
     console.error("Auth callback error:", error);
-    return NextResponse.redirect(`${APP_URL}/`);
+    const appUrl = getAppUrl();
+    return NextResponse.redirect(`${appUrl}/`);
   }
 }

@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import { headers } from "next/headers";
 import { Navigation } from "~/components/Navigation";
 import { Providers } from "~/components/providers";
+import { getAppUrl } from "~/utils/env";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -12,11 +13,11 @@ export const metadata = {
   openGraph: {
     title: "Checkpoint - GitHub Analytics",
     description: "Track your GitHub commitment and analyze your code contributions.",
-    url: process.env.NEXT_PUBLIC_APP_URL,
+    url: getAppUrl(),
     siteName: "Checkpoint",
     images: [
       {
-        url: `${process.env.NEXT_PUBLIC_APP_URL}/og.png`,
+        url: `${getAppUrl()}/og.png`,
         width: 1200,
         height: 630,
       },
@@ -28,7 +29,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Checkpoint - GitHub Analytics",
     description: "Track your GitHub commitment and analyze your code contributions.",
-    images: [`${process.env.NEXT_PUBLIC_APP_URL}/og.png`],
+    images: [`${getAppUrl()}/og.png`],
   },
 };
 
