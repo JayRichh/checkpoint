@@ -1,100 +1,53 @@
 # Committed
 
-A GitHub analytics dashboard that visualizes your coding activity and repository statistics. Built with Next.js 15, TypeScript, and Tailwind CSS.
+A GitHub analytics dashboard that visualizes your coding activity and repository statistics. Built with Next.js 15, TypeScript, and Tailwind CSS on the GitHub GraphQL API.
 
 ## Features
 
-- 📊 Interactive contribution calendar
-- 📈 Language distribution analytics
-- 🔄 Real-time GitHub data sync
-- 🌓 Dark mode support
-- 📱 Responsive design
+- 📊 Interactive contribution calendar with year navigation
+- 📈 Language distribution analytics and insights
+- 🔄 Real-time GitHub data sync via GraphQL
 - 🔒 Secure GitHub OAuth integration
 - 📱 Device flow support for CLI authentication
-- 🔄 Token refresh and session management
+- 🔄 Automatic token refresh and session management
 
-## Setup
+## Quick Start
 
-1. Clone the repository:
+1. Clone and install:
 ```bash
 git clone https://github.com/jayrichh/committed.git
 cd committed
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Create a GitHub OAuth App:
-- Go to GitHub Settings > Developer settings > OAuth Apps > New OAuth App
+2. Set up GitHub OAuth:
+- Create OAuth App in GitHub Developer Settings
 - Set Homepage URL to `https://committed.vercel.app` (or your domain)
 - Set Authorization callback URL to `https://committed.vercel.app/api/auth/callback`
-- Enable Device Flow in your OAuth App settings if you want to support CLI authentication
-- Copy the Client ID and Client Secret
+- Enable Device Flow if needed
+- Create `.env.local` from `.env.example`
+- Add OAuth credentials and demo token
 
-4. Create a Personal Access Token for demo profile:
-- Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)
-- Generate a new token with the following scopes:
-  - `repo`
-  - `read:user`
-- Copy the token
-
-5. Create a `.env.local` file:
-```env
-# GitHub OAuth
-NEXT_PUBLIC_GITHUB_CLIENT_ID=your_github_oauth_client_id
-GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
-
-# Personal token for demo profile
-NEXT_PUBLIC_GITHUB_TOKEN=your_personal_access_token
-
-# App URLs
-NEXT_PUBLIC_APP_URL=https://committed.vercel.app
-```
-
-6. Run the development server:
+3. Run it:
 ```bash
 npm run dev
 ```
 
-7. Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Authentication
 
-## Environment Variables
+### OAuth Integration
+- Web-based OAuth flow with automatic token refresh
+- Device flow support for CLI authentication
+- Application-level auth for demo mode using PAT
+- Secure token storage and management
+- Background token refresh handling
 
-- `NEXT_PUBLIC_GITHUB_CLIENT_ID`: GitHub OAuth App Client ID
-- `GITHUB_CLIENT_SECRET`: GitHub OAuth App Client Secret
-- `NEXT_PUBLIC_GITHUB_TOKEN`: Personal Access Token for demo profile
-- `NEXT_PUBLIC_APP_URL`: Your app's URL (e.g., https://committed.vercel.app)
-
-## Authentication Flows
-
-### Web OAuth Flow
-1. User clicks "Connect GitHub"
-2. User is redirected to GitHub for authorization
-3. After authorization, user is redirected back with a code
-4. Code is exchanged for access and refresh tokens
-5. User data is loaded using the access token
-
-### Device Flow (for CLI)
-1. App requests device code from GitHub
-2. User enters code on GitHub's device activation page
-3. App polls for token until user completes activation
-4. Access and refresh tokens are stored securely
-
-### Token Refresh
-- Access tokens expire after 8 hours
-- Refresh tokens are used to obtain new access tokens
-- Token refresh is handled automatically in the background
-
-## Tech Stack
-
-- [Next.js 15](https://nextjs.org/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Framer Motion](https://www.framer.com/motion/)
-- [Nivo](https://nivo.rocks/)
-- [Zustand](https://github.com/pmndrs/zustand)
+### GraphQL API Integration
+- Uses GitHub GraphQL API v4 for efficient data fetching
+- Batched queries for contribution data and repository stats
+- Real-time data synchronization with rate limiting
+- Optimized query patterns for performance
+- Cached responses for improved load times
 
 ## Project Structure
 
@@ -105,29 +58,43 @@ src/
 │   │   └── auth/          # Auth endpoints
 │   └── github/           # GitHub analytics pages
 ├── components/            # React components
-│   ├── ui/               # UI components
-│   └── Navigation.tsx    # Main navigation
 ├── lib/                  # Utilities and services
-│   ├── auth.ts          # Authentication logic
-│   └── github.ts        # GitHub API integration
 └── types/               # TypeScript types
 ```
 
+## Tech Stack
+
+- Next.js 15 with App Router
+- TypeScript for type safety
+- Tailwind CSS for styling
+- GitHub GraphQL API v4
+- Framer Motion animations
+- Nivo data visualization
+- Zustand state management
+
 ## Development
 
-### Commands
+### Environment Variables
+```env
+NEXT_PUBLIC_GITHUB_CLIENT_ID=   # OAuth Client ID
+GITHUB_CLIENT_SECRET=           # OAuth Secret
+NEXT_PUBLIC_GITHUB_TOKEN=       # Demo PAT
+NEXT_PUBLIC_APP_URL=           # App URL
+```
 
-- `npm run dev`: Start development server
-- `npm run build`: Build for production
-- `npm run start`: Start production server
-- `npm run lint`: Run ESLint
+### Commands
+```bash
+npm run dev    # Development server
+npm run build  # Production build
+npm run start  # Production server
+npm run lint   # Run ESLint
+```
 
 ### Key Files
-
-- `src/lib/auth.ts`: Authentication logic and state management
-- `src/lib/github.ts`: GitHub API integration and data fetching
-- `src/app/api/auth/*`: Authentication API routes
-- `src/app/github/page.tsx`: Main analytics dashboard
+- `src/lib/auth.ts`: Authentication logic
+- `src/lib/github.ts`: GraphQL API integration
+- `src/app/api/auth/*`: Auth endpoints
+- `src/app/github/page.tsx`: Analytics dashboard
 
 ## License
 
