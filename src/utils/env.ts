@@ -28,5 +28,28 @@ export function validateEnvVars() {
     console.error(
       `Missing required environment variables: ${missingVars.join(', ')}`
     );
+    throw new Error('Missing required environment variables');
   }
+}
+
+export function validateGitHubConfig() {
+  const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      'GitHub OAuth configuration is incomplete. Please check NEXT_PUBLIC_GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.'
+    );
+  }
+
+  return {
+    clientId,
+    clientSecret,
+  };
+}
+
+export function normalizeUrl(baseUrl: string, path: string): string {
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const cleanPath = path.replace(/^\//, '');
+  return `${cleanBase}/${cleanPath}`;
 }

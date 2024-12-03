@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { getAppUrl } from "~/utils/env";
+import { getAppUrl, validateGitHubConfig, normalizeUrl } from "~/utils/env";
 
 interface AuthState {
   token: string | null;
@@ -58,7 +58,6 @@ export const useAuthStore = create<AuthState>()(
 );
 
 export const GITHUB_OAUTH_URL = "https://github.com/login/oauth/authorize";
-export const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
 
 interface DeviceCodeResponse {
   device_code: string;
@@ -70,7 +69,7 @@ interface DeviceCodeResponse {
 
 export async function initiateDeviceFlow(): Promise<DeviceCodeResponse> {
   const appUrl = getAppUrl();
-  const response = await fetch(`${appUrl}/api/auth/device`, {
+  const response = await fetch(normalizeUrl(appUrl, 'api/auth/device'), {
     method: "POST",
   });
   
@@ -83,7 +82,7 @@ export async function initiateDeviceFlow(): Promise<DeviceCodeResponse> {
 
 export async function pollDeviceCode(deviceCode: string): Promise<any> {
   const appUrl = getAppUrl();
-  const response = await fetch(`${appUrl}/api/auth/device?device_code=${deviceCode}`);
+  const response = await fetch(normalizeUrl(appUrl, `api/auth/device?device_code=${deviceCode}`));
   
   if (!response.ok) {
     throw new Error("Failed to poll device code");
@@ -93,21 +92,29 @@ export async function pollDeviceCode(deviceCode: string): Promise<any> {
 }
 
 export function getGitHubOAuthURL(state?: string) {
-  const appUrl = getAppUrl();
-  const params = new URLSearchParams({
-    client_id: GITHUB_CLIENT_ID || "",
-    redirect_uri: `${appUrl}/api/auth/callback`,
-    scope: "repo read:user",
-    state: state || Math.random().toString(36).substring(7),
-  });
+  try {
+    const { clientId } = validateGitHubConfig();
+    const appUrl = getAppUrl();
+    const redirectUri = normalizeUrl(appUrl, 'api/auth/callback');
+    
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: "repo read:user",
+      state: state || Math.random().toString(36).substring(7),
+    });
 
-  return `${GITHUB_OAUTH_URL}?${params.toString()}`;
+    return `${GITHUB_OAUTH_URL}?${params.toString()}`;
+  } catch (error) {
+    console.error('Failed to generate GitHub OAuth URL:', error);
+    throw error;
+  }
 }
 
 export async function refreshAccessToken(refreshToken: string) {
   const appUrl = getAppUrl();
   try {
-    const response = await fetch(`${appUrl}/api/auth/refresh`, {
+    const response = await fetch(normalizeUrl(appUrl, 'api/auth/refresh'), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
