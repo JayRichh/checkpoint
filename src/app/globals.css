@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base colors with refined neutrals - Enhanced contrast */
+    --background: 35 30% 98%; /* Warm white */
+    --background-secondary: 35 25% 92%; /* Darker soft warm gray for better contrast */
+    --foreground: 35 25% 10%; /* Even darker warm gray for maximum contrast */
+    --foreground-secondary: 35 15% 25%; /* Darker medium warm gray */
+    --border: 35 20% 75%; /* Higher contrast border */
+    --border-secondary: 35 20% 70%; /* Higher contrast secondary border */
+
+    /* Brand colors - warm terra with increased contrast */
+    --brand: 28 60% 45%;
+
+    /* Primary colors - high contrast warm brown */
+    --primary: 28 75% 35%;
+    --primary-foreground: 35 30% 98%;
+
+    /* Accent colors - high contrast soft purple */
+    --accent: 250 65% 45%;
+    --accent-foreground: 35 30% 98%;
+
+    /* Secondary colors - high contrast muted terra */
+    --secondary: 28 55% 40%;
+    --secondary-foreground: 35 30% 98%;
+
+    /* Success colors - high contrast muted sage */
+    --success: 145 55% 35%;
+    --success-foreground: 35 30% 98%;
+
+    /* Warning colors - high contrast warm amber */
+    --warning: 35 90% 45%;
+    --warning-foreground: 35 25% 10%;
+
+    /* Error colors - high contrast muted coral */
+    --error: 0 75% 40%;
+    --error-foreground: 35 30% 98%;
+
+    /* Surface colors with increased contrast */
+    --surface: 35 30% 98%;
+    --surface-foreground: 35 25% 10%;
+
+    /* Border radius */
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark mode with enhanced contrast */
+    --background: 28 25% 8%;
+    --background-secondary: 28 25% 12%;
+    --foreground: 35 15% 98%;
+    --foreground-secondary: 35 15% 90%;
+    --border: 28 20% 30%;
+    --border-secondary: 28 20% 35%;
+
+    --brand: 28 60% 70%;
+
+    /* Dark mode colors with enhanced contrast */
+    --primary: 28 65% 75%;
+    --primary-foreground: 28 25% 8%;
+
+    --accent: 250 55% 75%;
+    --accent-foreground: 28 25% 8%;
+
+    --secondary: 28 55% 70%;
+    --secondary-foreground: 28 25% 8%;
+
+    --success: 145 55% 60%;
+    --success-foreground: 28 25% 8%;
+
+    --warning: 35 90% 70%;
+    --warning-foreground: 28 25% 8%;
+
+    --error: 0 65% 70%;
+    --error-foreground: 28 25% 8%;
+
+    --surface: 28 25% 8%;
+    --surface-foreground: 35 15% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary/70 ring-offset-2;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90;
+  }
+
+  .btn-ghost {
+    @apply text-foreground hover:bg-background-secondary/80;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
