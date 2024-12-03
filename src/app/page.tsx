@@ -13,7 +13,10 @@ export default function HomePage() {
           
           <div className="relative max-w-4xl mx-auto text-center space-y-8">
             <div className="space-y-4">
-              <Text variant="h1" className="bg-gradient-to-br from-primary via-brand to-secondary bg-clip-text text-transparent">
+              <Text 
+                variant="h1" 
+                gradient="primary"
+              >
                 Track Your GitHub Commitment
               </Text>
               <Text variant="body-lg" className="text-foreground-secondary max-w-2xl mx-auto">

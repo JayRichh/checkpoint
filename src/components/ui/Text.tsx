@@ -32,7 +32,7 @@ const variantClasses: Record<TextVariant, string> = {
 const colorClasses = {
   default: "text-foreground",
   primary: "text-primary",
-  secondary: "text-muted-foreground",
+  secondary: "text-foreground-secondary",
   success: "text-success",
   error: "text-error",
 };
@@ -83,22 +83,17 @@ export const Text = forwardRef<HTMLDivElement, TextProps>(
         ref={ref}
         className={cn(
           variantClasses[variant],
-          colorClasses[color],
+          gradient === "none" ? colorClasses[color] : gradientClasses[gradient],
           weightClasses[finalWeight],
           alignClasses[align],
-          gradientClasses[gradient],
           glass && "glass",
           balance && "text-balance",
           mono ? "font-mono" : "font-sans",
-          "relative",
           className
         )}
         {...props}
       >
-        {glass && (
-          <span className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-25 blur-sm" />
-        )}
-        <span className="relative">{children}</span>
+        {children}
       </div>
     );
   }
