@@ -3,10 +3,10 @@
 import React, { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { fetchGitHubContributions, useGitHubStore } from "../../../lib/github";
-import { useAuthStore, getGitHubOAuthURL } from "../../../lib/auth";
-import { ProgressLoader } from "../../../components/ui/progress-loader";
-import { Button } from "../../../components/ui/Button";
+import { useAuthStore, getGitHubOAuthURL } from "~/lib/auth";
+import { useGitHubData } from "~/hooks/useGitHubData";
+import { ProgressLoader } from "~/components/ui/progress-loader";
+import { Button } from "~/components/ui/Button";
 import { GitHubCalendar } from "./GitHubCalendar";
 import { LanguageDistribution } from "./LanguageDistribution";
 import { Header } from "./Header";
@@ -14,13 +14,7 @@ import { FilterControls } from "./FilterControls";
 
 export function GitHubAnalytics() {
   const searchParams = useSearchParams();
-  const {
-    yearData,
-    languageData,
-    isLoading,
-    error,
-    lastFetched
-  } = useGitHubStore();
+  const { yearData, languageData, isLoading, error, refetch } = useGitHubData();
   
   const { 
     setToken, 
@@ -45,13 +39,6 @@ export function GitHubAnalytics() {
       window.history.replaceState({}, "", "/github");
     }
   }, [searchParams, setToken, setUsername, setIsOAuth]);
-
-  useEffect(() => {
-    const shouldFetch = token && (!lastFetched || !yearData.length);
-    if (shouldFetch) {
-      fetchGitHubContributions().catch(console.error);
-    }
-  }, [token, lastFetched, yearData.length]);
 
   const handleLogin = () => {
     window.location.href = getGitHubOAuthURL();
@@ -81,6 +68,11 @@ export function GitHubAnalytics() {
           {!token && (
             <Button variant="primary" size="lg" className="mt-4" onClick={handleLogin}>
               Connect GitHub
+            </Button>
+          )}
+          {token && (
+            <Button variant="primary" size="lg" className="mt-4" onClick={() => refetch()}>
+              Retry
             </Button>
           )}
         </div>
@@ -127,7 +119,7 @@ export function GitHubAnalytics() {
         onLogout={handleLogout}
       />
 
-      <FilterControls />
+      <FilterControls onFilterChange={refetch} />
 
       <div className="mb-6 text-xl font-semibold text-center">
         {currentYear.totalContributions.toLocaleString()} contributions

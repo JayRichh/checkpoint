@@ -1,18 +1,14 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage, StorageValue } from "zustand/middleware";
 import { getAuthToken, getCurrentUsername, useAuthStore } from "./auth";
 import { useFilterStore } from "../app/github/components/FilterControls";
 
 const GITHUB_API = "https://api.github.com/graphql";
-const CACHE_TIME = 3600;
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 5000;
-const RATE_LIMIT_BACKOFF = 60000;
 const MAX_REPOS_PER_PAGE = 50;
 const MAX_LANGUAGES_PER_REPO = 10;
-
 const EXCLUDED_LANGUAGES = new Set(["Roff"]);
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 interface ContributionDay {
   contributionCount: number;
@@ -62,15 +58,18 @@ interface Repository {
   };
 }
 
-interface GitHubState {
+type GitHubStateData = {
+  yearData: YearContributions[];
+  languageData: LanguageStats | null;
+  lastFetched: number | null;
   progress: number;
   error: string | null;
   isLoading: boolean;
   loadingYears: Set<number>;
-  yearData: YearContributions[];
-  languageData: LanguageStats | null;
-  lastFetched: number | null;
   currentRequest: Promise<any> | null;
+};
+
+interface GitHubState extends GitHubStateData {
   setProgress: (progress: number) => void;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
@@ -80,61 +79,44 @@ interface GitHubState {
   setCurrentRequest: (request: Promise<any> | null) => void;
   updateLastFetched: () => void;
   reset: () => void;
+  fetchGitHubContributions: () => Promise<YearContributions[]>;
 }
 
-const useGitHubStore = create<GitHubState>()(
-  persist(
-    (set) => ({
-      progress: 0,
-      error: null,
-      isLoading: false,
-      loadingYears: new Set(),
-      yearData: [],
-      languageData: null,
-      lastFetched: null,
-      currentRequest: null,
-      setProgress: (progress) =>
-        set((state) => ({
-          progress: Math.max(state.progress, progress),
-        })),
-      setError: (error) => set({ error }),
-      setLoading: (isLoading) => set({ isLoading }),
-      setLoadingYear: (year, loading) =>
-        set((state) => {
-          const newLoadingYears = new Set(state.loadingYears);
-          if (loading) {
-            newLoadingYears.add(year);
-          } else {
-            newLoadingYears.delete(year);
-          }
-          return { loadingYears: newLoadingYears };
-        }),
-      setYearData: (yearData) => set({ yearData }),
-      setLanguageData: (languageData) => set({ languageData }),
-      setCurrentRequest: (request) => set({ currentRequest: request }),
-      updateLastFetched: () => set({ lastFetched: Date.now() }),
-      reset: () =>
-        set({
-          progress: 0,
-          error: null,
-          isLoading: false,
-          loadingYears: new Set(),
-          yearData: [],
-          languageData: null,
-          lastFetched: null,
-          currentRequest: null,
-        }),
-    }),
-    {
-      name: "github-storage",
-      partialize: (state) => ({
-        yearData: state.yearData,
-        languageData: state.languageData,
-        lastFetched: state.lastFetched,
-      }),
+type GitHubStorageState = Pick<GitHubStateData, 'yearData' | 'languageData' | 'lastFetched'>;
+
+// Custom storage with username-based keys
+const createPerUserStorage = () => {
+  const storage = createJSONStorage<GitHubStorageState>(() => ({
+    getItem: (name): string | null => {
+      const username = getCurrentUsername();
+      const key = `${name}-${username || 'anonymous'}`;
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
     },
-  ),
-);
+    setItem: (name, value): void => {
+      const username = getCurrentUsername();
+      const key = `${name}-${username || 'anonymous'}`;
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch {
+        // Handle storage errors silently
+      }
+    },
+    removeItem: (name): void => {
+      const username = getCurrentUsername();
+      const key = `${name}-${username || 'anonymous'}`;
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Handle storage errors silently
+      }
+    }
+  }));
+  return storage;
+};
 
 async function makeGraphQLRequest(query: string, variables: any) {
   const token = await getAuthToken();
@@ -304,38 +286,116 @@ async function fetchAllData() {
   };
 }
 
-export async function fetchGitHubContributions(): Promise<YearContributions[]> {
-  const store = useGitHubStore.getState();
-  const { setProgress, setError, setYearData, setLanguageData, setLoading, updateLastFetched, currentRequest, setCurrentRequest } = store;
+export const useGitHubStore = create<GitHubState>()(
+  persist(
+    (set, get) => ({
+      progress: 0,
+      error: null,
+      isLoading: false,
+      loadingYears: new Set(),
+      yearData: [],
+      languageData: null,
+      lastFetched: null,
+      currentRequest: null,
+      setProgress: (progress) =>
+        set((state) => ({
+          progress: Math.max(state.progress, progress),
+        })),
+      setError: (error) => set({ error }),
+      setLoading: (isLoading) => set({ isLoading }),
+      setLoadingYear: (year, loading) =>
+        set((state) => {
+          const newLoadingYears = new Set(state.loadingYears);
+          if (loading) {
+            newLoadingYears.add(year);
+          } else {
+            newLoadingYears.delete(year);
+          }
+          return { loadingYears: newLoadingYears };
+        }),
+      setYearData: (yearData) => set({ yearData }),
+      setLanguageData: (languageData) => set({ languageData }),
+      setCurrentRequest: (request) => set({ currentRequest: request }),
+      updateLastFetched: () => set({ lastFetched: Date.now() }),
+      reset: () =>
+        set({
+          progress: 0,
+          error: null,
+          isLoading: false,
+          loadingYears: new Set(),
+          yearData: [],
+          languageData: null,
+          lastFetched: null,
+          currentRequest: null,
+        }),
+      fetchGitHubContributions: async () => {
+        const store = get();
+        const { setProgress, setError, setYearData, setLanguageData, setLoading, updateLastFetched, currentRequest, setCurrentRequest } = store;
 
-  if (currentRequest) {
-    return currentRequest;
+        // Check if data is still fresh
+        if (store.lastFetched && Date.now() - store.lastFetched < CACHE_DURATION) {
+          return store.yearData;
+        }
+
+        // Clear any existing request if the username changes
+        const username = getCurrentUsername();
+        if (!username) {
+          store.reset();
+          throw new Error("No username available");
+        }
+
+        if (currentRequest) {
+          return currentRequest;
+        }
+
+        try {
+          setLoading(true);
+          store.reset();
+          setProgress(10);
+
+          const request = fetchAllData();
+          setCurrentRequest(request);
+
+          const { yearData, languageData } = await request;
+          
+          setYearData(yearData);
+          setLanguageData(languageData);
+          updateLastFetched();
+          setProgress(100);
+
+          return yearData;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Error fetching GitHub data";
+          setError(message);
+          return [];
+        } finally {
+          setLoading(false);
+          setCurrentRequest(null);
+        }
+      }
+    }),
+    {
+      name: 'github-storage',
+      storage: createPerUserStorage(),
+      partialize: (state): GitHubStorageState => ({
+        yearData: state.yearData,
+        languageData: state.languageData,
+        lastFetched: state.lastFetched,
+      }),
+    }
+  )
+);
+
+// Subscribe to auth changes to clear data when needed
+useAuthStore.subscribe((state, prevState) => {
+  if (prevState.username !== state.username || !state.token) {
+    useGitHubStore.getState().reset();
+    // Clear all stored data for previous user
+    try {
+      const previousKey = `github-storage-${prevState.username || 'anonymous'}`;
+      localStorage.removeItem(previousKey);
+    } catch {
+      // Handle storage errors silently
+    }
   }
-
-  try {
-    setLoading(true);
-    store.reset();
-    setProgress(10);
-
-    const request = fetchAllData();
-    setCurrentRequest(request);
-
-    const { yearData, languageData } = await request;
-    
-    setYearData(yearData);
-    setLanguageData(languageData);
-    updateLastFetched();
-    setProgress(100);
-
-    return yearData;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Error fetching GitHub data";
-    setError(message);
-    return [];
-  } finally {
-    setLoading(false);
-    setCurrentRequest(null);
-  }
-}
-
-export { useGitHubStore };
+});
