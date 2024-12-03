@@ -2,14 +2,7 @@
 
 A GitHub analytics dashboard that visualizes your coding activity and repository statistics. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
-<<<<<<< HEAD
 ## Features
-=======
-
-![image](https://github.com/user-attachments/assets/e912b63c-4ff3-497c-b90a-24c6766cb0e4)
-![image](https://github.com/user-attachments/assets/717960fe-6811-4621-9f3b-e9201c2f840a)
-
->>>>>>> 53607c678e4286172dfe2727b29bb9bfd47486c0
 
 - 📊 Interactive contribution calendar
 - 📈 Language distribution analytics
