@@ -15,15 +15,15 @@ A GitHub analytics dashboard that visualizes your coding activity and repository
 
 1. Clone and install:
 ```bash
-git clone https://github.com/jayrichh/checkpoint.git
-cd checkpoint
+git clone https://github.com/jayrichh/checkpoint-self.git
+cd checkpoint-self
 npm install
 ```
 
 2. Set up GitHub OAuth:
 - Create OAuth App in GitHub Developer Settings
-- Set Homepage URL to `https://checkpoint.vercel.app` (or your domain)
-- Set Authorization callback URL to `https://checkpoint.vercel.app/api/auth/callback`
+- Set Homepage URL to `https://checkpoint-self.vercel.app` (or your domain)
+- Set Authorization callback URL to `https://checkpoint-self.vercel.app/api/auth/callback`
 - Enable Device Flow if needed
 - Create `.env.local` from `.env.example`
 - Add OAuth credentials and demo token
