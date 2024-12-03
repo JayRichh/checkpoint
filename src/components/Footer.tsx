@@ -87,7 +87,15 @@ export function Footer() {
           </span>
           <div className="flex items-center gap-4">
             <span className="text-sm text-foreground/60">
-              Made with precision
+              App idea from{" "}
+              <a
+              href="https://github.com/cdevelopment010"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Craig
+            </a>
             </span>
           </div>
         </motion.div>
