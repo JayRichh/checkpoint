@@ -38,6 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
   
   return {
     metadataBase: new URL(appUrl),
+    alternates: { canonical: '/' },
     title: {
       default: "Checkpoint - GitHub Analytics",
       template: "%s | Checkpoint"
