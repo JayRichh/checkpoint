@@ -1,3 +1,5 @@
+export const SITE_URL = 'https://checkpoint-self.vercel.app';
+
 export function getAppUrl() {
   const url = process.env.NEXT_PUBLIC_APP_URL;
   if (!url) {
@@ -11,7 +13,7 @@ export function getAppUrl() {
       return window.location.origin;
     }
   }
-  return url;
+  return url || SITE_URL;
 }
 
 export function validateClientEnv() {

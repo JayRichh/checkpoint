@@ -2,6 +2,9 @@
   "name": "checkpoint-self",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,13 +17,13 @@
     "@nivo/core": "^0.88.0",
     "@nivo/pie": "^0.88.0",
     "@radix-ui/react-tooltip": "^1.0.7",
-    "axios": "^1.6.5",
+    "axios": "^1.20.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cookies-next": "^5.0.2",
     "framer-motion": "^10.18.0",
     "lucide-react": "^0.309.0",
-    "next": "15.0.7",
+    "next": "15.5.28",
     "next-themes": "^0.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -35,7 +38,7 @@
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.56.0",
-    "eslint-config-next": "14.0.4",
+    "eslint-config-next": "15.5.28",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
